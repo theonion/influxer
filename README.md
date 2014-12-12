@@ -1,6 +1,7 @@
 # influxer
 
-a tiny event tracking proxy for influxdb
+a tiny event tracking proxy for influxdb inspired by [tinytracker](https://github.com/theonion/tinytracker) -- 
+in all actuality it's a fork to work with influx and not graphite
 
 
 ## running with uwsgi
