@@ -16,21 +16,15 @@ gif = base64.b64decode('R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEA
 
 regex = re.compile(r'^.*\.\d+$')
 
-host = os.environ.get('INFLUXDB_HOST_IP', 'influx-master.local')
+host = os.environ.get('INFLUXDB_HOST_IP', 'localhost')
 port = os.environ.get('INFLUXDB_PORT', 8086)
 user = os.environ.get('INFLUXDB_USERNAME', 'root')
-pwd = os.environ.get('INFLUXDB_PASSWORD', 'rootuserspassword')
+pwd = os.environ.get('INFLUXDB_PASSWORD', 'root')
 db = os.environ.get('INFLUXDB_DB', 'influxdb')
 client = InfluxDBClient(host, port, user, pwd, db)
 
 
 def application(env, start_response):
-    """
-
-    :param env:
-    :param start_response:
-    :return:
-    """
     if env['PATH_INFO'] == '/influx.gif':
         start_response('200 OK', [('Content-Typ', 'image/gif')])
         yield gif
