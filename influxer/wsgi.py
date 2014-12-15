@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import base64
+import logging
+import logging.handlers
 import re
 try:
     from urllib.parse import parse_qs
@@ -12,16 +14,23 @@ import os
 from influxdb.client import InfluxDBClient
 
 
+logger = logging.getLogger('influxer')
+logger.setLevel(logging.INFO)
+log_file_name = os.environ.get('LOG_FILE_NAME', 'influxer.log')
+handler = logging.handlers.RotatingFileHandler(log_file_name, maxBytes=5000000, backupCount=5)
+logger.addHandler(handler)
+
 gif = base64.b64decode('R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==')
 
 regex = re.compile(r'^.*\.\d+$')
 
-host = os.environ.get('INFLUXDB_HOST_IP', 'localhost')
+host = os.environ.get('INFLUXDB_HOST_IP', 'influx-master.local')
 port = os.environ.get('INFLUXDB_PORT', 8086)
 user = os.environ.get('INFLUXDB_USERNAME', 'root')
-pwd = os.environ.get('INFLUXDB_PASSWORD', 'root')
+pwd = os.environ.get('INFLUXDB_PASSWORD', 'rootuserspassword')
 db = os.environ.get('INFLUXDB_DB', 'influxdb')
 client = InfluxDBClient(host, port, user, pwd, db)
+logger.info('connected to influxdb: {}:{}'.format(host, port))
 
 
 def application(env, start_response):
@@ -44,6 +53,7 @@ def application(env, start_response):
                         'points': [[content_id, 1]]
                     }]
                     res = client.write_points(body)
+                    logger.info('{} {}'.format(res, body))
         except Exception as e:
             print(e)
 
