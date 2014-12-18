@@ -33,30 +33,65 @@ client = InfluxDBClient(host, port, user, pwd, db)
 logger.info('connected to influxdb: {}:{}'.format(host, port))
 
 
+def influxer_1(qs):
+    """drop in replacement for tinytracker style event monitoring. this strips important information from the
+    query string and pushes it to influxdb for storage.
+
+    :param qs: the parsed query string
+    """
+    try:
+        events = qs.get('event', [])
+        for event in events:
+            if re.match(regex, event):
+                event_data = event.split('.')
+                property = event_data[0]
+                content_id = event_data[-1]
+                body = [{
+                    'name': property,
+                    'columns': ['content_id', 'clicks'],
+                    'points': [[content_id, 1]]
+                }]
+                res = client.write_points(body)
+                logger.info('{} {}'.format(res, body))
+    except Exception as e:
+        logger.error(str(e))
+
+
+def influxer_2(qs):
+    """better replacement for tinytracker event monitoring. this uses the dotted tagging style available for
+    influxdb v0.8.7+.
+
+    :param qs: the parsed query string
+    """
+    try:
+        events = qs.get('event', [])
+        for event in events:
+            if re.match(regex, event):
+                event_data = event.split('.')
+                content_id = event_data[-1]
+                name = '.'.join(event_data[:-1])
+                body = [{
+                    'name': name,
+                    'columns': ['content_id', 'clicks'],
+                    'points': [[content_id, 1]],
+                }]
+                res = client.write_points(body)
+                logger.info('{}, {}',format(res, body))
+    except Exception as e:
+        logger.error(str(e))
+
+
 def application(env, start_response):
     if env['PATH_INFO'] == '/influx.gif':
         start_response('200 OK', [('Content-Typ', 'image/gif')])
         yield gif
-
         qs = parse_qs(env['QUERY_STRING'])
-
-        try:
-            events = qs.get('event', [])
-            for event in events:
-                if re.match(regex, event):
-                    event_data = event.split('.')
-                    property = event_data[0]
-                    content_id = event_data[-1]
-                    body = [{
-                        'name': property,
-                        'columns': ['content_id', 'clicks'],
-                        'points': [[content_id, 1]]
-                    }]
-                    res = client.write_points(body)
-                    logger.info('{} {}'.format(res, body))
-        except Exception as e:
-            print(e)
-
+        influxer_1(qs)
+    elif env['PATH_INFO'] == '/influxer2.gif':
+        start_response('200 OK', [('Content-Typ', 'image/gif')])
+        yield gif
+        qs = parse_qs(env['QUERY_STRING'])
+        influxer_2(qs)
     else:
         start_response('404 Not Found', [('Content-Type', 'text/plain')])
         yield 'Nothing Here'

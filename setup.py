@@ -3,8 +3,8 @@ from distutils.core import setup
 
 setup(
     name='influxer',
-    version='0.0.3',
-    description='A small pixel tracker built in python and designed to send data to InfluxDB',
+    version='0.0.4',
+    description='A small pixel tracker built in python and designed to send data to InfluxDB and replace TinyTracker',
     author='Vince Forgione',
     author_email='vforgione@theonion.com',
     packages=['influxer'],
