@@ -76,7 +76,26 @@ def influxer_2(qs):
                     'points': [[content_id, 1]],
                 }]
                 res = client.write_points(body)
-                logger.info('{}, {}',format(res, body))
+                logger.info('{}, {}'.format(res, body))
+    except Exception as e:
+        logger.error(str(e))
+
+
+def influxer3(params):
+    """parses qs for `site`, `content_id`, `event`, `extra` for more verbose and versatile tracking
+    """
+    site = params.get('site')
+    content_id = params.get('content_id')
+    event = params.get('event')
+    extra = params.get('extra')
+    body = [{
+        'name': site,
+        'columns': ['content_id', 'event', 'extra', 'views'],
+        'points': [content_id, event, extra, 1]
+    }]
+    try:
+        res = client.write_points(body)
+        logger.info('{}, {}'.format(res, body))
     except Exception as e:
         logger.error(str(e))
 
