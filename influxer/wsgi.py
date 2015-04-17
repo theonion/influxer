@@ -81,7 +81,7 @@ def influxer_2(qs):
         logger.error(str(e))
 
 
-def influxer3(params):
+def influxer_3(params):
     """parses qs for `site`, `content_id`, `event`, `extra` for more verbose and versatile tracking
     """
     site = params.get('site')
@@ -111,6 +111,11 @@ def application(env, start_response):
         yield gif
         qs = parse_qs(env['QUERY_STRING'])
         influxer_2(qs)
+    elif env['PATH_INFO'] == '/influxer3.gif':
+        start_response('200 OK', [('Content-Typ', 'image/gif')])
+        yield gif
+        qs = parse_qs(env['QUERY_STRING'])
+        influxer_3(qs)
     else:
         start_response('404 Not Found', [('Content-Type', 'text/plain')])
         yield 'Nothing Here'
