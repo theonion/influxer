@@ -90,7 +90,7 @@ def influxer_3(params):
     extra = params.get('extra')
     body = [{
         'name': site,
-        'columns': ['content_id', 'event', 'extra', 'views'],
+        'columns': ['content_id', 'event', 'extra', 'clicks'],
         'points': [content_id, event, extra, 1]
     }]
     try:
