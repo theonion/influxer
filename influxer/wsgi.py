@@ -4,6 +4,7 @@
 import base64
 from collections import Counter
 import logging
+import re
 
 try:
     from urllib.parse import parse_qs
@@ -38,8 +39,11 @@ log_file_name = os.environ.get('INFLUXER_LOG_FILE_NAME', 'influxer.log')
 handler = logging.handlers.RotatingFileHandler(log_file_name, maxBytes=5000000, backupCount=5)
 logger.addHandler(handler)
 
+# init content id regex
+content_id_regex = re.compile(r"\d+")
 
-def send_data(events, additional):
+
+def send_point_data(events, additional):
     """creates data point payloads and sends them to influxdb
     """
     bodies = {}
@@ -60,6 +64,41 @@ def send_data(events, additional):
             client.write_points([{
                 "name": site,
                 "columns": ["content_id", "event", "path", "value"],
+                "points": points,
+            }])
+        except Exception as e:
+            logger.error(str(e))
+
+
+def send_trending_data(events):
+    """creates data point payloads for trending data to influxdb
+    """
+    bodies = {}
+
+    # sort the values
+    top_hits = sorted(
+        [(key, count) for key, count in events.items()],
+        key=lambda x: x[1],
+        reverse=True
+    )[:100]
+
+    # build up points to be written
+    for (site, content_id), count in top_hits:
+        # skip if content id is not a number
+        if not re.match(content_id_regex, content_id):
+            continue
+        # add point
+        bodies.setdefault(site, [])
+        bodies[site].append([content_id, count])
+
+    for site, points in bodies.items():
+        # create name
+        name = "{}-trending".format(site)
+        # send payload to influxdb
+        try:
+            client.write_points([{
+                "name": name,
+                "columns": ["content_id", "value"],
                 "points": points,
             }])
         except Exception as e:
@@ -92,7 +131,8 @@ def count_events():
 
         # after tabulating, spawn a new thread to send the data to influxdb
         if len(events):
-            gevent.spawn(send_data, events, additional)
+            gevent.spawn(send_point_data, events, additional)
+            gevent.spawn(send_trending_data, events)
 
 
 # create the wait loop
