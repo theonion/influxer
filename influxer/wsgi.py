@@ -52,14 +52,14 @@ def send_data(events, additional):
         event, path = additional.get((site, content_id), (None, None))
 
         # append the point
-        bodies[site].append([content_id, event, path])
+        bodies[site].append([content_id, event, path, count])
 
     for site, points in bodies.items():
         # send payload to influxdb
         try:
             client.write_points([{
                 "name": site,
-                "columns": ["content_id", "event", "path"],
+                "columns": ["content_id", "event", "path", "value"],
                 "points": points,
             }])
         except Exception as e:
