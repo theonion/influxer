@@ -4,6 +4,7 @@
 import base64
 from collections import Counter
 import logging
+from logging import handlers
 import re
 
 try:
@@ -36,7 +37,7 @@ flush_interval = os.environ.get("INFLUXER_FLUSH_INTERVAL", 60)  # seconds
 logger = logging.getLogger('influxer')
 logger.setLevel(logging.INFO)
 log_file_name = os.environ.get('INFLUXER_LOG_FILE_NAME', 'influxer.log')
-handler = logging.handlers.RotatingFileHandler(log_file_name, maxBytes=5000000, backupCount=5)
+handler = handlers.RotatingFileHandler(log_file_name, maxBytes=5000000, backupCount=5)
 logger.addHandler(handler)
 
 # init content id regex
