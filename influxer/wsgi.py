@@ -37,7 +37,9 @@ flush_interval = os.environ.get("INFLUXER_FLUSH_INTERVAL", 60)  # seconds
 logger = logging.getLogger('influxer')
 logger.setLevel(logging.INFO)
 log_file_name = os.environ.get('INFLUXER_LOG_FILE_NAME', 'influxer.log')
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler = handlers.RotatingFileHandler(log_file_name, maxBytes=5000000, backupCount=5)
+handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # init content id regex
@@ -47,8 +49,12 @@ content_id_regex = re.compile(r"\d+")
 def send_point_data(events, additional):
     """creates data point payloads and sends them to influxdb
     """
+    logger.info('send_point_data')
     bodies = {}
     for (site, content_id), count in events.items():
+        if not len(site) or not len(content_id):
+            continue
+
         # influxdb will take an array of arrays of values, cutting down on the number of requests
         # needed to be sent to it wo write data
         bodies.setdefault(site, [])
@@ -62,18 +68,21 @@ def send_point_data(events, additional):
     for site, points in bodies.items():
         # send payload to influxdb
         try:
-            client.write_points([{
+            data = [{
                 "name": site,
                 "columns": ["content_id", "event", "path", "value"],
                 "points": points,
-            }])
+            }]
+            logger.debug(str(data))
+            client.write_points(data)
         except Exception as e:
-            logger.error(str(e))
+            logger.exception(e)
 
 
 def send_trending_data(events):
     """creates data point payloads for trending data to influxdb
     """
+    logger.info('send_trending_data')
     bodies = {}
 
     # sort the values
@@ -85,9 +94,9 @@ def send_trending_data(events):
 
     # build up points to be written
     for (site, content_id), count in top_hits:
-        # skip if content id is not a number
-        if not re.match(content_id_regex, content_id):
+        if not len(site) or not re.match(content_id_regex, content_id):
             continue
+
         # add point
         bodies.setdefault(site, [])
         bodies[site].append([content_id, count])
@@ -97,13 +106,15 @@ def send_trending_data(events):
         name = "{}-trending".format(site)
         # send payload to influxdb
         try:
-            client.write_points([{
+            data = [{
                 "name": name,
                 "columns": ["content_id", "value"],
                 "points": points,
-            }])
+            }]
+            logger.debug(str(data))
+            client.write_points(data)
         except Exception as e:
-            logger.error(str(e))
+            logger.exception(e)
 
 
 def count_events():
@@ -127,7 +138,7 @@ def count_events():
             except queue.Empty:
                 break
             except Exception as e:
-                logger.error(str(e))
+                logger.exception(e)
                 break
 
         # after tabulating, spawn a new thread to send the data to influxdb
@@ -153,13 +164,14 @@ def application(env, start_response):
         # parse the query params and stick them in the queue
         params = parse_qs(env["QUERY_STRING"])
         try:
-            site = params.get("site")
-            content_id = params.get("content_id")
-            event = params.get("event")
-            path = params.get("path")
+            site = params.get("site", [""])[0]
+            content_id = params.get("content_id", [""])[0]
+            event = params.get("event", [""])[0]
+            path = params.get("path", [""])[0]
             events_queue.put((site, content_id, event, path))
+            logger.debug(str((site, content_id, event, path)))
         except Exception as e:
-            logger.error(str(e))
+            logger.exception(e)
 
     else:
         start_response("404 Not Found", [("Content-Type", "text/plain")])
