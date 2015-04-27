@@ -243,7 +243,7 @@ def pageviews(params):
         return json.dumps({"error": e.message}), "500 Internal Error"
 
     # check the cache
-    cache_key = str((memcached_prefix, "pageviews.json", series, from_date, to_date, group_by))
+    cache_key = "{}:{}:{}:{}:{}:{}".format(memcached_prefix, "pageviews.json", series, from_date, to_date, group_by)
     try:
         data = MEMCACHED_CLIENT.get(cache_key)
         if data:
@@ -289,7 +289,7 @@ def pageviews(params):
 
     # cache the response
     try:
-        MEMCACHED_CLIENT.set(cache_key, res, MEMCACHED_EXPIRATION)
+        MEMCACHED_CLIENT.set(cache_key, res, time=MEMCACHED_EXPIRATION)
     except Exception as e:
         LOGGER.exception(e)
 
@@ -316,7 +316,8 @@ def content_ids(params):
         return json.dumps({"error": e.message}), "500 Internal Error"
 
     # check the cache
-    cache_key = str((memcached_prefix, "pageviews.json", series, from_date, to_date, group_by, ids))
+    cache_key = "{}:{}:{}:{}:{}:{}:{}".format(
+        memcached_prefix, "pageviews.json", series, from_date, to_date, group_by, ids)
     try:
         data = MEMCACHED_CLIENT.get(cache_key)
         if data:
@@ -372,7 +373,7 @@ def content_ids(params):
 
     # cache the response
     try:
-        MEMCACHED_CLIENT.set(cache_key, res, MEMCACHED_EXPIRATION)
+        MEMCACHED_CLIENT.set(cache_key, res, time=MEMCACHED_EXPIRATION)
     except Exception as e:
         LOGGER.exception(e)
 
@@ -392,7 +393,7 @@ def trending(params):
         return json.dumps({"error": e.message}), "500 Internal Error"
 
     # check the cache
-    cache_key = str((memcached_prefix, "pageviews.json", series, offset, limit))
+    cache_key = "{}:{}:{}:{}:{}".format(memcached_prefix, "pageviews.json", series, offset, limit)
     try:
         data = MEMCACHED_CLIENT.get(cache_key)
         if data:
@@ -441,7 +442,7 @@ def trending(params):
 
     # cache the response
     try:
-        MEMCACHED_CLIENT.set(cache_key, res, MEMCACHED_EXPIRATION)
+        MEMCACHED_CLIENT.set(cache_key, res, time=MEMCACHED_EXPIRATION)
     except Exception as e:
         LOGGER.exception(e)
 
