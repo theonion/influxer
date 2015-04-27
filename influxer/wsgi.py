@@ -470,7 +470,6 @@ def application(env, start_response):
             event = params.get("event", [""])[0]
             path = params.get("path", [""])[0]
             EVENTS_QUEUE.put((site, content_id, event, path))
-            LOGGER.info(str((site, content_id, event, path)))
         except Exception as e:
             LOGGER.exception(e)
 
