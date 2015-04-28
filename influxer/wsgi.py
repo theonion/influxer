@@ -271,8 +271,8 @@ def pageviews(params):
             "FROM {series} " \
             "WHERE time > '{from_date}' " \
             "AND time < '{to_date}' " \
-            "GROUP BY time({group_by}) " \
             "AND event =~ /^pageview$/ " \
+            "GROUP BY time({group_by}) " \
             "fill(0);"
     args = {"series": series, "from_date": from_date, "to_date": to_date, "group_by": group_by}
 
@@ -343,8 +343,8 @@ def embedviews(params):
             "FROM {series} " \
             "WHERE time > '{from_date}' " \
             "AND time < '{to_date}' " \
-            "GROUP BY time({group_by}) " \
             "AND event =~ /^embedview$/ " \
+            "GROUP BY time({group_by}) " \
             "fill(0);"
     args = {"series": series, "from_date": from_date, "to_date": to_date, "group_by": group_by}
 
