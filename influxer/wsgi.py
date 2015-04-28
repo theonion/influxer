@@ -391,7 +391,7 @@ def content_ids(params):
 
     # check the cache
     cache_key = "{}:{}:{}:{}:{}:{}:{}".format(
-        memcached_prefix, "pageviews.json", series, from_date, to_date, group_by, ids)
+        memcached_prefix, "contentids.json", series, from_date, to_date, group_by, ids)
     try:
         data = MEMCACHED_CLIENT.get(cache_key)
         if data:
@@ -467,7 +467,7 @@ def trending(params):
         return json.dumps({"error": e.message}), "500 Internal Error"
 
     # check the cache
-    cache_key = "{}:{}:{}:{}:{}".format(memcached_prefix, "pageviews.json", series, offset, limit)
+    cache_key = "{}:{}:{}:{}:{}".format(memcached_prefix, "trending.json", series, offset, limit)
     try:
         data = MEMCACHED_CLIENT.get(cache_key)
         if data:
