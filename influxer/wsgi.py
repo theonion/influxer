@@ -315,7 +315,7 @@ def embedviews(params):
         return json.dumps({"error": e.message}), "500 Internal Error"
 
     # check the cache
-    cache_key = "{}:{}:{}:{}:{}:{}".format(memcached_prefix, "pageviews.json", series, from_date, to_date, group_by)
+    cache_key = "{}:{}:{}:{}:{}:{}".format(memcached_prefix, "embedviews.json", series, from_date, to_date, group_by)
     try:
         data = MEMCACHED_CLIENT.get(cache_key)
         if data:
@@ -540,7 +540,7 @@ def videoplays(params):
         return json.dumps({"error": e.message}), "500 Internal Error"
 
     # check the cache
-    cache_key = "{}:{}:{}:{}:{}:{}".format(memcached_prefix, "pageviews.json", series, from_date, to_date, group_by)
+    cache_key = "{}:{}:{}:{}:{}:{}".format(memcached_prefix, "videoplays.json", series, from_date, to_date, group_by)
     try:
         data = MEMCACHED_CLIENT.get(cache_key)
         if data:
@@ -612,7 +612,7 @@ def embedlays(params):
         return json.dumps({"error": e.message}), "500 Internal Error"
 
     # check the cache
-    cache_key = "{}:{}:{}:{}:{}:{}".format(memcached_prefix, "pageviews.json", series, from_date, to_date, group_by)
+    cache_key = "{}:{}:{}:{}:{}:{}".format(memcached_prefix, "embedplays.json", series, from_date, to_date, group_by)
     try:
         data = MEMCACHED_CLIENT.get(cache_key)
         if data:
