@@ -125,7 +125,7 @@ def send_trending_data(events):
 
     for site, points in bodies.items():
         # create name
-        name = "{}-trending".format(site)
+        name = "{}_trending".format(site)
         # send payload to influxdb
         try:
             data = [{
