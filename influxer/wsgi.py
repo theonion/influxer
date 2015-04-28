@@ -269,8 +269,82 @@ def pageviews(params):
     # build out the query
     query = "SELECT sum(value) as value " \
             "FROM {series} " \
-            "WHERE time > '{from_date}' AND time < '{to_date}' " \
+            "WHERE time > '{from_date}' " \
+            "AND time < '{to_date}' " \
             "GROUP BY time({group_by}) " \
+            "AND event =~ /^pageview$/ " \
+            "fill(0);"
+    args = {"series": series, "from_date": from_date, "to_date": to_date, "group_by": group_by}
+
+    # send the request
+    try:
+        res = INFLUXDB_CLIENT.query(query.format(**args))
+
+    # capture errors and send them back along with the query (for inspection/debugging)
+    except Exception as e:
+        LOGGER.exception(e)
+        return json.dumps({"error": e.message, "query": query.format(**args)}), "500 Internal Error"
+
+    # build the response object
+    response = flatten_response(res)
+    res = json.dumps(response)
+
+    # cache the response
+    try:
+        MEMCACHED_CLIENT.set(cache_key, res, time=MEMCACHED_EXPIRATION)
+    except Exception as e:
+        LOGGER.exception(e)
+
+    return res, "200 OK"
+
+
+def embedviews(params):
+    """takes a couple (optional) query parameters and queries influxdb and sends a modified response
+    """
+    # set up default values
+    default_from, default_to, yesterday, _ = make_default_times()
+
+    # get params
+    try:
+        series = params.get("site", [DEFAULT_SERIES])[0]
+        from_date = params.get("from", [default_from])[0]
+        to_date = params.get("to", [default_to])[0]
+        group_by = params.get("group_by", [DEFAULT_GROUP_BY])[0]
+    except Exception as e:
+        LOGGER.exception(e)
+        return json.dumps({"error": e.message}), "500 Internal Error"
+
+    # check the cache
+    cache_key = "{}:{}:{}:{}:{}:{}".format(memcached_prefix, "pageviews.json", series, from_date, to_date, group_by)
+    try:
+        data = MEMCACHED_CLIENT.get(cache_key)
+        if data:
+            return data, "200 OK"
+    except Exception as e:
+        LOGGER.exception(e)
+
+    # parse from date
+    from_date = parse_datetime(from_date)
+    if from_date is None:
+        return json.dumps({"error": "could not parse 'from'"}), "400 Bad Request"
+
+    # parse to date
+    to_date = parse_datetime(to_date)
+    if to_date is None:
+        return json.dumps({"error": "could not parse 'to'"}), "400 Bad Request"
+
+    # influx will only keep non-aggregated data for a day, so if the from param is beyond that point
+    # we need to update the series name to use the rolled up values
+    if from_date < yesterday:
+        series = update_series(series)
+
+    # build out the query
+    query = "SELECT sum(value) as value " \
+            "FROM {series} " \
+            "WHERE time > '{from_date}' " \
+            "AND time < '{to_date}' " \
+            "GROUP BY time({group_by}) " \
+            "AND event =~ /^embedview$/ " \
             "fill(0);"
     args = {"series": series, "from_date": from_date, "to_date": to_date, "group_by": group_by}
 
@@ -449,6 +523,150 @@ def trending(params):
     return res, "200 OK"
 
 
+def videoplays(params):
+    """takes a couple (optional) query parameters and queries influxdb and sends a modified response
+    """
+    # set up default values
+    default_from, default_to, yesterday, _ = make_default_times()
+
+    # get params
+    try:
+        series = "onionstudios"
+        from_date = params.get("from", [default_from])[0]
+        to_date = params.get("to", [default_to])[0]
+        group_by = params.get("group_by", [DEFAULT_GROUP_BY])[0]
+    except Exception as e:
+        LOGGER.exception(e)
+        return json.dumps({"error": e.message}), "500 Internal Error"
+
+    # check the cache
+    cache_key = "{}:{}:{}:{}:{}:{}".format(memcached_prefix, "pageviews.json", series, from_date, to_date, group_by)
+    try:
+        data = MEMCACHED_CLIENT.get(cache_key)
+        if data:
+            return data, "200 OK"
+    except Exception as e:
+        LOGGER.exception(e)
+
+    # parse from date
+    from_date = parse_datetime(from_date)
+    if from_date is None:
+        return json.dumps({"error": "could not parse 'from'"}), "400 Bad Request"
+
+    # parse to date
+    to_date = parse_datetime(to_date)
+    if to_date is None:
+        return json.dumps({"error": "could not parse 'to'"}), "400 Bad Request"
+
+    # influx will only keep non-aggregated data for a day, so if the from param is beyond that point
+    # we need to update the series name to use the rolled up values
+    if from_date < yesterday:
+        series = update_series(series)
+
+    # build out the query
+    query = "SELECT sum(value) as value " \
+            "FROM {series} " \
+            "WHERE time > '{from_date}' " \
+            "AND time < '{to_date}' " \
+            "AND event =~ /^videoplay$/ " \
+            "GROUP BY time({group_by}) " \
+            "fill(0);"
+    args = {"series": series, "from_date": from_date, "to_date": to_date, "group_by": group_by}
+
+    # send the request
+    try:
+        res = INFLUXDB_CLIENT.query(query.format(**args))
+
+    # capture errors and send them back along with the query (for inspection/debugging)
+    except Exception as e:
+        LOGGER.exception(e)
+        return json.dumps({"error": e.message, "query": query.format(**args)}), "500 Internal Error"
+
+    # build the response object
+    response = flatten_response(res)
+    res = json.dumps(response)
+
+    # cache the response
+    try:
+        MEMCACHED_CLIENT.set(cache_key, res, time=MEMCACHED_EXPIRATION)
+    except Exception as e:
+        LOGGER.exception(e)
+
+    return res, "200 OK"
+
+
+def embedlays(params):
+    """takes a couple (optional) query parameters and queries influxdb and sends a modified response
+    """
+    # set up default values
+    default_from, default_to, yesterday, _ = make_default_times()
+
+    # get params
+    try:
+        series = "onionstudios"
+        from_date = params.get("from", [default_from])[0]
+        to_date = params.get("to", [default_to])[0]
+        group_by = params.get("group_by", [DEFAULT_GROUP_BY])[0]
+    except Exception as e:
+        LOGGER.exception(e)
+        return json.dumps({"error": e.message}), "500 Internal Error"
+
+    # check the cache
+    cache_key = "{}:{}:{}:{}:{}:{}".format(memcached_prefix, "pageviews.json", series, from_date, to_date, group_by)
+    try:
+        data = MEMCACHED_CLIENT.get(cache_key)
+        if data:
+            return data, "200 OK"
+    except Exception as e:
+        LOGGER.exception(e)
+
+    # parse from date
+    from_date = parse_datetime(from_date)
+    if from_date is None:
+        return json.dumps({"error": "could not parse 'from'"}), "400 Bad Request"
+
+    # parse to date
+    to_date = parse_datetime(to_date)
+    if to_date is None:
+        return json.dumps({"error": "could not parse 'to'"}), "400 Bad Request"
+
+    # influx will only keep non-aggregated data for a day, so if the from param is beyond that point
+    # we need to update the series name to use the rolled up values
+    if from_date < yesterday:
+        series = update_series(series)
+
+    # build out the query
+    query = "SELECT sum(value) as value " \
+            "FROM {series} " \
+            "WHERE time > '{from_date}' " \
+            "AND time < '{to_date}' " \
+            "AND event =~ /^embedplay$/ " \
+            "GROUP BY time({group_by}) " \
+            "fill(0);"
+    args = {"series": series, "from_date": from_date, "to_date": to_date, "group_by": group_by}
+
+    # send the request
+    try:
+        res = INFLUXDB_CLIENT.query(query.format(**args))
+
+    # capture errors and send them back along with the query (for inspection/debugging)
+    except Exception as e:
+        LOGGER.exception(e)
+        return json.dumps({"error": e.message, "query": query.format(**args)}), "500 Internal Error"
+
+    # build the response object
+    response = flatten_response(res)
+    res = json.dumps(response)
+
+    # cache the response
+    try:
+        MEMCACHED_CLIENT.set(cache_key, res, time=MEMCACHED_EXPIRATION)
+    except Exception as e:
+        LOGGER.exception(e)
+
+    return res, "200 OK"
+
+
 # create the wait loop
 gevent.spawn(count_events)
 
@@ -480,6 +698,12 @@ def application(env, start_response):
         start_response(status, [("Content-Type", "application/json")])
         yield data
 
+    elif path == "/embedviews.json":
+        params = parse_qs(env["QUERY_STRING"])
+        data, status = embedviews(params)
+        start_response(status, [("Content-Type", "application/json")])
+        yield data
+
     elif path == "/contentids.json":
         params = parse_qs(env["QUERY_STRING"])
         data, status = content_ids(params)
@@ -489,6 +713,18 @@ def application(env, start_response):
     elif path == "/trending.json":
         params = parse_qs(env["QUERY_STRING"])
         data, status = trending(params)
+        start_response(status, [("Content-Type", "application/json")])
+        yield data
+
+    elif path == "/videoplays.json":
+        params = parse_qs(env["QUERY_STRING"])
+        data, status = videoplays(params)
+        start_response(status, [("Content-Type", "application/json")])
+        yield data
+
+    elif path == "/embedplays.json":
+        params = parse_qs(env["QUERY_STRING"])
+        data, status = embedlays(params)
         start_response(status, [("Content-Type", "application/json")])
         yield data
 
