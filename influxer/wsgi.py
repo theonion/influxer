@@ -183,6 +183,8 @@ def make_default_times():
 
 
 def parse_datetime(value, str_format="%Y-%m-%dT%H:%M:%S"):
+    if isinstance(value, datetime):
+        return value
     try:
         return datetime.strptime(value, str_format)
     except ValueError:
@@ -258,11 +260,13 @@ def pageviews(params):
     # parse from date
     from_date = parse_datetime(from_date)
     if from_date is None:
+        LOGGER.error("could not parse 'from'")
         return json.dumps({"error": "could not parse 'from'"}), "400 Bad Request"
 
     # parse to date
     to_date = parse_datetime(to_date)
     if to_date is None:
+        LOGGER.error("could not parse 'to'")
         return json.dumps({"error": "could not parse 'to'"}), "400 Bad Request"
 
     # influx will only keep non-aggregated data for a day, so if the from param is beyond that point
@@ -300,6 +304,7 @@ def pageviews(params):
 
     # capture errors and send them back along with the query (for inspection/debugging)
     except Exception as e:
+        LOGGER.error("query: {}".format(query.format(**args)))
         LOGGER.exception(e)
         return json.dumps({"error": e.message, "query": query.format(**args)}), "500 Internal Error"
 
