@@ -195,15 +195,15 @@ def format_datetime(dt, str_format="%Y-%m-%d %H:%M:%S"):
     return dt.strftime(str_format)
 
 
-def update_series(series):
+def update_series(series, rollup_name, metric="all"):
     # if the series is a regex, slice away the start and end values and drop in the pattern with escape patterns
     if re.match(SERIES_REGEX, series):
         series_name = series[2:-2]
-        series_name += "\.all\.5m"
+        series_name += "\.{metric}\.5m".format(metric=metric)
         series = "/^{name}$/".format(name=series_name)
     # otherwise tack it onto the end in plaintext
     else:
-        series += ".all.5m"
+        series += "{name}.{metric}.5m".format(name=rollup_name, metric=metric)
     return series
 
 
@@ -211,12 +211,12 @@ def update_trending_series(series):
     # if the series is a regex, slice away the start and end values and drop in the pattern with escape patterns
     if re.match(SERIES_REGEX, series):
         series_name = series[2:-2]
-        series_name += "\-trending\.content_id\.5m"
+        series_name += "_trending\.content_id\.5m"
         series = "/^{name}$/".format(name=series_name)
     # otherwise tack it onto the end in plaintext
     else:
-        series += '-trending.content_id.5m'
-        series = '"{}"'.format(series)
+        series += '_trending.pageviews.content_id.5m'
+        series = '"{name}"'.format(name=series)
     return series
 
 
@@ -273,7 +273,7 @@ def pageviews(params):
     # we need to update the series name to use the rolled up values
     rollup_query = False
     if from_date < yesterday:
-        series = update_series(series)
+        series = update_series(series, "pageviews")
         rollup_query = True
 
     # format times
@@ -349,30 +349,42 @@ def embedviews(params):
     # parse from date
     from_date = parse_datetime(from_date)
     if from_date is None:
+        LOGGER.error("could not parse 'from'")
         return json.dumps({"error": "could not parse 'from'"}), "400 Bad Request"
 
     # parse to date
     to_date = parse_datetime(to_date)
     if to_date is None:
+        LOGGER.error("could not parse 'to'")
         return json.dumps({"error": "could not parse 'to'"}), "400 Bad Request"
 
     # influx will only keep non-aggregated data for a day, so if the from param is beyond that point
     # we need to update the series name to use the rolled up values
+    rollup_query = False
     if from_date < yesterday:
-        series = update_series(series)
+        series = update_series(series, "embedviews")
+        rollup_query = True
 
     # format times
     from_date = format_datetime(from_date)
     to_date = format_datetime(to_date)
 
     # build out the query
-    query = "SELECT sum(value) as value " \
-            "FROM {series} " \
-            "WHERE time > '{from_date}' " \
-            "AND time < '{to_date}' " \
-            "AND event =~ /^embedview$/ " \
-            "GROUP BY time({group_by}) " \
-            "fill(0);"
+    if not rollup_query:
+        query = "SELECT sum(value) as value " \
+                "FROM {series} " \
+                "WHERE time > '{from_date}' " \
+                "AND time < '{to_date}' " \
+                "AND event =~ /^embedview$/ " \
+                "GROUP BY time({group_by}) " \
+                "fill(0);"
+    else:
+        query = "SELECT sum(value) as value " \
+                "FROM {series} " \
+                "WHERE time > '{from_date}' " \
+                "AND time < '{to_date}' " \
+                "GROUP BY time({group_by}) " \
+                "fill(0);"
     args = {"series": series, "from_date": from_date, "to_date": to_date, "group_by": group_by}
 
     # send the request
@@ -433,17 +445,19 @@ def content_ids(params):
     # parse from date
     from_date = parse_datetime(from_date)
     if from_date is None:
+        LOGGER.error("could not parse 'from'")
         return json.dumps({"error": "could not parse 'from'"}), "400 Bad Request"
 
     # parse to date
     to_date = parse_datetime(to_date)
     if to_date is None:
+        LOGGER.error("could not parse 'to'")
         return json.dumps({"error": "could not parse 'to'"}), "400 Bad Request"
 
     # influx will only keep non-aggregated data for a day, so if the from param is beyond that point
     # we need to update the series name to use the rolled up values
     if from_date < yesterday:
-        series = update_series(series)
+        series = update_series(series, "pageviews", "content_id")
 
     # format times
     from_date = format_datetime(from_date)
@@ -513,6 +527,7 @@ def trending(params):
     try:
         limit = int(limit)
     except ValueError:
+        LOGGER.error("limit param must be an integer")
         return json.dumps({"error": "limit param must be an integer"}), "400 Bad Request"
 
     # build the query
@@ -582,30 +597,42 @@ def videoplays(params):
     # parse from date
     from_date = parse_datetime(from_date)
     if from_date is None:
+        LOGGER.error("could not parse 'from'")
         return json.dumps({"error": "could not parse 'from'"}), "400 Bad Request"
 
     # parse to date
     to_date = parse_datetime(to_date)
     if to_date is None:
+        LOGGER.error("could not parse 'to'")
         return json.dumps({"error": "could not parse 'to'"}), "400 Bad Request"
 
     # influx will only keep non-aggregated data for a day, so if the from param is beyond that point
     # we need to update the series name to use the rolled up values
+    rollup_query = False
     if from_date < yesterday:
-        series = update_series(series)
+        series = update_series(series, "videoplays")
+        rollup_query = True
 
     # format times
     from_date = format_datetime(from_date)
     to_date = format_datetime(to_date)
 
     # build out the query
-    query = "SELECT sum(value) as value " \
-            "FROM {series} " \
-            "WHERE time > '{from_date}' " \
-            "AND time < '{to_date}' " \
-            "AND event =~ /^videoplay$/ " \
-            "GROUP BY time({group_by}) " \
-            "fill(0);"
+    if not rollup_query:
+        query = "SELECT sum(value) as value " \
+                "FROM {series} " \
+                "WHERE time > '{from_date}' " \
+                "AND time < '{to_date}' " \
+                "AND event =~ /^videoplay$/ " \
+                "GROUP BY time({group_by}) " \
+                "fill(0);"
+    else:
+        query = "SELECT sum(value) as value " \
+                "FROM {series} " \
+                "WHERE time > '{from_date}' " \
+                "AND time < '{to_date}' " \
+                "GROUP BY time({group_by}) " \
+                "fill(0);"
     args = {"series": series, "from_date": from_date, "to_date": to_date, "group_by": group_by}
 
     # send the request
@@ -630,7 +657,7 @@ def videoplays(params):
     return res, "200 OK"
 
 
-def embedlays(params):
+def embedplays(params):
     """takes a couple (optional) query parameters and queries influxdb and sends a modified response
     """
     # set up default values
@@ -658,28 +685,40 @@ def embedlays(params):
     # parse from date
     from_date = parse_datetime(from_date)
     if from_date is None:
+        LOGGER.error("could not parse 'from'")
         return json.dumps({"error": "could not parse 'from'"}), "400 Bad Request"
 
     # parse to date
     to_date = parse_datetime(to_date)
     if to_date is None:
+        LOGGER.error("could not parse 'to'")
         return json.dumps({"error": "could not parse 'to'"}), "400 Bad Request"
 
     # influx will only keep non-aggregated data for a day, so if the from param is beyond that point
     # we need to update the series name to use the rolled up values
+    rollup_query = False
     if from_date < yesterday:
-        series = update_series(series)
+        series = update_series(series, "embedplays")
+        rollup_query = True
 
     # format times
     from_date = format_datetime(from_date)
     to_date = format_datetime(to_date)
 
     # build out the query
-    query = "SELECT sum(value) as value " \
+    if not rollup_query:
+        query = "SELECT sum(value) as value " \
+                "FROM {series} " \
+                "WHERE time > '{from_date}' " \
+                "AND time < '{to_date}' " \
+                "AND event =~ /^embedplay$/ " \
+                "GROUP BY time({group_by}) " \
+                "fill(0);"
+    else:
+        query = "SELECT sum(value) as value " \
             "FROM {series} " \
             "WHERE time > '{from_date}' " \
             "AND time < '{to_date}' " \
-            "AND event =~ /^embedplay$/ " \
             "GROUP BY time({group_by}) " \
             "fill(0);"
     args = {"series": series, "from_date": from_date, "to_date": to_date, "group_by": group_by}
@@ -763,7 +802,7 @@ def application(env, start_response):
 
     elif path == "/embedplays.json":
         params = parse_qs(env["QUERY_STRING"])
-        data, status = embedlays(params)
+        data, status = embedplays(params)
         start_response(status, [("Content-Type", "application/json")])
         yield data
 
