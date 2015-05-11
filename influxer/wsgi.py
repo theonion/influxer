@@ -263,17 +263,27 @@ def pageviews(params):
 
     # influx will only keep non-aggregated data for a day, so if the from param is beyond that point
     # we need to update the series name to use the rolled up values
+    rollup_query = False
     if from_date < yesterday:
         series = update_series(series)
+        rollup_query = True
 
     # build out the query
-    query = "SELECT sum(value) as value " \
-            "FROM {series} " \
-            "WHERE time > '{from_date}' " \
-            "AND time < '{to_date}' " \
-            "AND event =~ /^pageview$/ " \
-            "GROUP BY time({group_by}) " \
-            "fill(0);"
+    if not rollup_query:
+        query = "SELECT sum(value) as value " \
+                "FROM {series} " \
+                "WHERE time > '{from_date}' " \
+                "AND time < '{to_date}' " \
+                "AND event =~ /^pageview$/ " \
+                "GROUP BY time({group_by}) " \
+                "fill(0);"
+    else:
+        query = "SELECT sum(value) as value " \
+                "FROM {series} " \
+                "WHERE time > '{from_date}' " \
+                "AND time < '{to_date}' " \
+                "GROUP BY time({group_by}) " \
+                "fill(0);"
     args = {"series": series, "from_date": from_date, "to_date": to_date, "group_by": group_by}
 
     # send the request
