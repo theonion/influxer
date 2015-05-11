@@ -199,11 +199,11 @@ def update_series(series, rollup_name, metric="all"):
     # if the series is a regex, slice away the start and end values and drop in the pattern with escape patterns
     if re.match(SERIES_REGEX, series):
         series_name = series[2:-2]
-        series_name += "\.{metric}\.5m".format(metric=metric)
+        series_name += "\.{rollup}\.{metric}\.5m".format(rollup=rollup_name, metric=metric)
         series = "/^{name}$/".format(name=series_name)
     # otherwise tack it onto the end in plaintext
     else:
-        series += "{name}.{metric}.5m".format(name=rollup_name, metric=metric)
+        series += ".{name}.{metric}.5m".format(name=rollup_name, metric=metric)
     return series
 
 
