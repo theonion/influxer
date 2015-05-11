@@ -176,9 +176,9 @@ def make_default_times():
     today = datetime(now.year, now.month, now.day, 0, 0, 0)
     yesterday = today - timedelta(days=1, seconds=1)
     # stringify them for influxdb
-    default_from = yesterday.strftime("%Y-%m-%dT%H:%M:%S")
-    default_to = today.strftime("%Y-%m-%dT%H:%M:%S")
-    # return strings and datetimes
+    default_from = yesterday
+    default_to = today
+    # return datetimes
     return default_from, default_to, yesterday, today
 
 
@@ -187,6 +187,10 @@ def parse_datetime(value, str_format="%Y-%m-%dT%H:%M:%S"):
         return datetime.strptime(value, str_format)
     except ValueError:
         return None
+
+
+def format_datetime(dt, str_format="%Y-%m-%dT%H:%M:%S"):
+    return dt.strftime(str_format)
 
 
 def update_series(series):
@@ -268,6 +272,10 @@ def pageviews(params):
         series = update_series(series)
         rollup_query = True
 
+    # format times
+    from_date = format_datetime(from_date)
+    to_date = format_datetime(to_date)
+
     # build out the query
     if not rollup_query:
         query = "SELECT sum(value) as value " \
@@ -348,6 +356,10 @@ def embedviews(params):
     if from_date < yesterday:
         series = update_series(series)
 
+    # format times
+    from_date = format_datetime(from_date)
+    to_date = format_datetime(to_date)
+
     # build out the query
     query = "SELECT sum(value) as value " \
             "FROM {series} " \
@@ -427,6 +439,10 @@ def content_ids(params):
     # we need to update the series name to use the rolled up values
     if from_date < yesterday:
         series = update_series(series)
+
+    # format times
+    from_date = format_datetime(from_date)
+    to_date = format_datetime(to_date)
 
     # start building the query
     query = "SELECT content_id, sum(value) as value " \
@@ -573,6 +589,10 @@ def videoplays(params):
     if from_date < yesterday:
         series = update_series(series)
 
+    # format times
+    from_date = format_datetime(from_date)
+    to_date = format_datetime(to_date)
+
     # build out the query
     query = "SELECT sum(value) as value " \
             "FROM {series} " \
@@ -644,6 +664,10 @@ def embedlays(params):
     # we need to update the series name to use the rolled up values
     if from_date < yesterday:
         series = update_series(series)
+
+    # format times
+    from_date = format_datetime(from_date)
+    to_date = format_datetime(to_date)
 
     # build out the query
     query = "SELECT sum(value) as value " \
