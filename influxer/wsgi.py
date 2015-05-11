@@ -189,7 +189,7 @@ def parse_datetime(value, str_format="%Y-%m-%dT%H:%M:%S"):
         return None
 
 
-def format_datetime(dt, str_format="%Y-%m-%dT%H:%M:%S"):
+def format_datetime(dt, str_format="%Y-%m-%d %H:%M:%S"):
     return dt.strftime(str_format)
 
 
