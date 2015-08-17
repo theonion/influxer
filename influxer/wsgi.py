@@ -9,6 +9,7 @@ from logging import handlers
 import json
 import re
 import os
+import sys
 
 import gevent
 from gevent import queue
@@ -152,6 +153,7 @@ def count_events():
 
         # flush the queue
         while 1:
+            sys.stdout.write("\n\n\nwriting trending data for {} events\n\n\n\n".format(len(EVENTS_QUEUE)))
             try:
                 site, content_id, event, path = EVENTS_QUEUE.get_nowait()
                 events[(site, content_id)] += 1
