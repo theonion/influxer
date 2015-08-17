@@ -38,7 +38,7 @@ INFLUXDB_CLIENT = InfluxDBClient(host, port, user, pwd, db)
 # init the logger
 LOGGER = logging.getLogger("influxer")
 LOGGER.setLevel(logging.INFO)
-log_file_name = os.environ.get("INFLUXER_LOG_FILE_NAME", "/var/log/influxer.log")
+log_file_name = os.environ.get("INFLUXER_LOG_FILE_NAME", "influxer.log")
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 handler = handlers.RotatingFileHandler(log_file_name, maxBytes=5000000, backupCount=5)
 handler.setFormatter(formatter)
@@ -137,7 +137,9 @@ def send_trending_data(events):
                 "columns": ["content_id", "value"],
                 "points": points,
             }]
-            INFLUXDB_CLIENT.write_points(data)
+            sys.stderr.write("{}\n".format(str(data)))
+            res = INFLUXDB_CLIENT.write_points(data)
+            sys.stderr.write("{}\n".format(str(res)))
         except Exception as e:
             LOGGER.exception(e)
 

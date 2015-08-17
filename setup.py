@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name="influxer",
-    version="1.0.23",
+    version="1.0.24",
     description="Read and Write Event Data to InfluxDB",
     author="Vince Forgione",
     author_email="vforgione@theonion.com",
