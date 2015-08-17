@@ -76,7 +76,7 @@ def send_point_data(events, additional):
     """creates data point payloads and sends them to influxdb
     """
     bodies = {}
-    sys.stderr.write("send_point_data working on events")
+    sys.stderr.write("send_point_data working on events\n")
     for (site, content_id), count in events.items():
         if not len(site) or not len(content_id):
             continue
@@ -108,7 +108,9 @@ def send_trending_data(events):
     """creates data point payloads for trending data to influxdb
     """
     bodies = {}
-    sys.stderr.write("send_trending_data working on events")
+    sys.stderr.write("send_trending_data working on events\n")
+    for key, count in events.items():
+        sys.stderr.write("[trending] {}: {}\n".format(key, count))
     # sort the values
     top_hits = sorted(
         [(key, count) for key, count in events.items()],
@@ -173,7 +175,7 @@ def count_events():
             sys.stderr.write("invoking `send_trending_data`")
             gevent.spawn(send_trending_data, events)
         else:
-            sys.stderr.write("there are no events int he queue\n")
+            sys.stderr.write("there are no events in the queue\n")
 
 
 # reading stuff
