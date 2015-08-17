@@ -9,6 +9,7 @@ from logging import handlers
 import json
 import re
 import os
+import sys
 
 import gevent
 from gevent import queue
@@ -165,11 +166,11 @@ def count_events():
 
         # after tabulating, spawn a new thread to send the data to influxdb
         if len(events):
-            LOGGER.info("there are {} events to be processed".format(len(events)))
+            sys.stderr.write("there are {} events to be processed".format(len(events)))
             gevent.spawn(send_point_data, events, additional)
             gevent.spawn(send_trending_data, events)
         else:
-            LOGGER.error("there are not events int he queue")
+            sys.stderr.write("there are not events int he queue")
 
 
 # reading stuff
