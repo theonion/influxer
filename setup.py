@@ -9,7 +9,7 @@ setup(
     author_email="vforgione@theonion.com",
     packages=["influxer"],
     install_requires=[
-        "gevent==1.0.1",
+        "gevent==23.9.1",
         "influxdb==0.1.13",
         "pylibmc==1.4.2",
     ],
